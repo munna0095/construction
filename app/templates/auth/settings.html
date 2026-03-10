@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-md-12">
+        <h2 class="fw-bold" style="color: #166534;">Admin Authentication Settings</h2>
+        <p class="text-muted">Manage your login credentials for SIDDHI CONSTRUCTION.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="glass-card">
+            <h5 class="fw-bold mb-4">Update Profile</h5>
+            <form method="POST">
+                <div class="mb-4">
+                    <label for="email" class="form-label small fw-bold text-muted">LOGIN EMAIL (ID)</label>
+                    <input type="email" class="form-control bg-light border-success border-opacity-25" id="email"
+                        name="email" value="{{ current_user.email }}" required>
+                </div>
+
+                <hr class="my-4 border-success border-opacity-10">
+
+                <div class="mb-4">
+                    <label for="password" class="form-label small fw-bold text-muted">NEW PASSWORD (LEAVE BLANK TO KEEP
+                        CURRENT)</label>
+                    <input type="password" class="form-control bg-light border-success border-opacity-25" id="password"
+                        name="password">
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label small fw-bold text-muted">CONFIRM NEW
+                        PASSWORD</label>
+                    <input type="password" class="form-control bg-light border-success border-opacity-25"
+                        id="confirm_password" name="confirm_password">
+                </div>
+
+                <div class="d-flex justify-content-end mt-5">
+                    <button type="submit" class="btn btn-premium px-5">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-5 offset-md-1">
+        <div class="glass-card" style="border-left: 4px solid var(--accent-color);">
+            <h5 class="fw-bold mb-3">Security Tips</h5>
+            <ul class="text-muted small">
+                <li class="mb-2">Use a strong password with a mix of letters, numbers, and symbols.</li>
+                <li class="mb-2">Your Login Email is your unique identifier for the system.</li>
+                <li class="mb-2">Changes take effect immediately upon saving.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

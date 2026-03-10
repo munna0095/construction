@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('projects.index') }}" class="text-decoration-none">Project
+                    Portfolio</a></li>
+            <li class="breadcrumb-item active text-muted" aria-current="page">New Project</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold" style="color: #166534;">Initiate New Project Site</h2>
+    <p class="text-muted">Set up a new construction site for resource tracking.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="glass-card shadow-lg p-5">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <label for="name" class="form-label text-muted small fw-bold">PROJECT NAME</label>
+                        <input type="text" class="form-control bg-light border-success border-opacity-25" id="name"
+                            name="name" placeholder="e.g. Skyline Apartments" required>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="location" class="form-label text-muted small fw-bold">SITE LOCATION</label>
+                        <input type="text" class="form-control bg-light border-success border-opacity-25" id="location"
+                            name="location" placeholder="Full address or site coordinates">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="status" class="form-label text-muted small fw-bold">INITIAL STATUS</label>
+                        <select class="form-select bg-light border-success border-opacity-25" id="status" name="status">
+                            <option value="Planning">Planning</option>
+                            <option value="In Progress" selected>In Progress</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="description" class="form-label text-muted small fw-bold">PROJECT DESCRIPTION</label>
+                        <textarea class="form-control bg-light border-success border-opacity-25" id="description"
+                            name="description" rows="4" placeholder="Scope of work, key milestones..."></textarea>
+                    </div>
+
+                    <div class="col-md-12 mt-5">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ url_for('projects.index') }}"
+                                class="btn btn-outline-secondary px-4 border-0">Cancel</a>
+                            <button type="submit" class="btn btn-premium px-5">Launch Project</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-5 d-none d-lg-block">
+        <div class="p-4 rounded-4 bg-info bg-opacity-10 border border-info border-opacity-10 h-100">
+            <h5 class="fw-bold mb-4 text-info"><i class="fas fa-lightbulb me-2"></i> Site Setup Tips</h5>
+            <ul class="text-muted small">
+                <li class="mb-4">
+                    <strong>Integrated Tracking:</strong> Once created, you can assign workers to this site to track
+                    attendance-based costs.
+                </li>
+                <li class="mb-4">
+                    <strong>Material Management:</strong> Log all materials delivered to this site directly from the
+                    Project Panel.
+                </li>
+                <li class="mb-4">
+                    <strong>Real-time Analytics:</strong> The system will automatically compute the total investment in
+                    ₹ for this project.
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

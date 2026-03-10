@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('projects.index') }}" class="text-decoration-none">Project
+                    Portfolio</a></li>
+            <li class="breadcrumb-item active text-muted" aria-current="page">Edit Project</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold" style="color: #166534;">Edit Project Site</h2>
+    <p class="text-muted">Update information for <b>{{ project.name }}</b>.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="glass-card shadow-lg p-5">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <label for="name" class="form-label text-muted small fw-bold">PROJECT NAME</label>
+                        <input type="text" class="form-control bg-light border-success border-opacity-25" id="name"
+                            name="name" value="{{ project.name }}" required>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="location" class="form-label text-muted small fw-bold">SITE LOCATION</label>
+                        <input type="text" class="form-control bg-light border-success border-opacity-25" id="location"
+                            name="location" value="{{ project.location }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="status" class="form-label text-muted small fw-bold">STATUS</label>
+                        <select class="form-select bg-light border-success border-opacity-25" id="status" name="status">
+                            <option value="Planning" {% if project.status=='Planning' %}selected{% endif %}>Planning
+                            </option>
+                            <option value="In Progress" {% if project.status=='In Progress' %}selected{% endif %}>In
+                                Progress</option>
+                            <option value="On Hold" {% if project.status=='On Hold' %}selected{% endif %}>On Hold
+                            </option>
+                            <option value="Completed" {% if project.status=='Completed' %}selected{% endif %}>Completed
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="description" class="form-label text-muted small fw-bold">PROJECT DESCRIPTION</label>
+                        <textarea class="form-control bg-light border-success border-opacity-25" id="description"
+                            name="description" rows="4">{{ project.description }}</textarea>
+                    </div>
+
+                    <div class="col-md-12 mt-5">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ url_for('projects.index') }}"
+                                class="btn btn-outline-secondary px-4 border-0">Cancel</a>
+                            <button type="submit" class="btn btn-premium px-5">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

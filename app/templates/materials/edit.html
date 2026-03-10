@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('materials.index') }}"
+                    class="text-decoration-none">Materials Management</a></li>
+            <li class="breadcrumb-item active text-muted" aria-current="page">Edit Material</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold">Edit Material Record</h2>
+    <p class="text-muted">Update information for <b>{{ material.name }}</b>.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="glass-card shadow-lg p-4">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <label for="name" class="form-label text-muted small fw-bold">MATERIAL NAME</label>
+                        <input type="text" class="form-control bg-dark border-secondary text-white py-2" id="name"
+                            name="name" value="{{ material.name }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="unit" class="form-label text-muted small fw-bold">UNIT OF MEASUREMENT</label>
+                        <select class="form-select bg-dark border-secondary text-white py-2" id="unit" name="unit"
+                            required>
+                            <option value="Bags" {% if material.unit=='Bags' %}selected{% endif %}>Bags</option>
+                            <option value="kg" {% if material.unit=='kg' %}selected{% endif %}>kg</option>
+                            <option value="Cum" {% if material.unit=='Cum' %}selected{% endif %}>Cubic Meters (Cum)
+                            </option>
+                            <option value="Nos" {% if material.unit=='Nos' %}selected{% endif %}>Numbers (Nos)</option>
+                            <option value="Feet" {% if material.unit=='Feet' %}selected{% endif %}>Feet</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="stock_quantity" class="form-label text-muted small fw-bold">STOCK QUANTITY</label>
+                        <input type="number" step="0.01" class="form-control bg-dark border-secondary text-white py-2"
+                            id="stock_quantity" name="stock_quantity" value="{{ material.stock_quantity }}" required>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="unit_price" class="form-label text-muted small fw-bold">UNIT PRICE (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-white">₹</span>
+                            <input type="number" step="0.01"
+                                class="form-control bg-dark border-secondary text-white py-2" id="unit_price"
+                                name="unit_price" value="{{ material.unit_price }}" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 mt-5">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ url_for('materials.index') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+                            <button type="submit" class="btn btn-premium px-5">Update Material</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

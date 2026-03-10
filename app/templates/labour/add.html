@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('labour.index') }}" class="text-decoration-none">Labour
+                    Management</a></li>
+            <li class="breadcrumb-item active text-muted" aria-current="page">Add Labour</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold" style="color: #166534;">Register New Labour</h2>
+    <p class="text-muted">Enter workforce details for SIDDHI CONSTRUCTION.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="glass-card shadow-lg p-5">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <label for="name" class="form-label text-muted small fw-bold">FULL NAME</label>
+                        <input type="text" class="form-control bg-light border-success border-opacity-25" id="name"
+                            name="name" placeholder="Worker's Full Name" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label text-muted small fw-bold">PHONE NUMBER (10 DIGITS)</label>
+                        <input type="text" class="form-control bg-light border-success border-opacity-25" id="phone"
+                            name="phone" placeholder="e.g. 9876543210" pattern="\d{10}" maxlength="10" required>
+                        <div class="form-text small">Must be exactly 10 digits.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="daily_wage" class="form-label text-muted small fw-bold">DAILY WAGE (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-success border-opacity-25">₹</span>
+                            <input type="number" step="0.01"
+                                class="form-control bg-light border-success border-opacity-25" id="daily_wage"
+                                name="daily_wage" placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="fixed_salary" class="form-label text-muted small fw-bold">FIXED SALARY (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-success border-opacity-25">₹</span>
+                            <input type="number" step="0.01"
+                                class="form-control bg-light border-success border-opacity-25" id="fixed_salary"
+                                name="fixed_salary" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="project_id" class="form-label text-muted small fw-bold">ASSIGN TO PROJECT
+                            (OPTIONAL)</label>
+                        <select class="form-select bg-light border-success border-opacity-25" id="project_id"
+                            name="project_id">
+                            <option value="">No specific project (Field Work)</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="address" class="form-label text-muted small fw-bold">ADDRESS / DESCRIPTION</label>
+                        <textarea class="form-control bg-light border-success border-opacity-25" id="address"
+                            name="address" rows="3" placeholder="Enter full address or additional details"></textarea>
+                    </div>
+
+                    <div class="col-md-12 mt-5">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ url_for('labour.index') }}"
+                                class="btn btn-outline-secondary px-4 border-0">Cancel</a>
+                            <button type="submit" class="btn btn-premium px-5">Add Record</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-5 d-none d-lg-block">
+        <div class="p-4 rounded-4 bg-success bg-opacity-10 border border-success border-opacity-10 h-100">
+            <h5 class="fw-bold mb-4 text-success"><i class="fas fa-id-card me-2"></i> Registration Guidelines</h5>
+            <ul class="text-muted small">
+                <li class="mb-4">
+                    <strong>Phone Validation:</strong> The system strictly requires a 10-digit mobile number for SMS and
+                    contact purposes.
+                </li>
+                <li class="mb-4">
+                    <strong>Project Linking:</strong> You can link a worker to a specific site now or do it later from
+                    the project panel.
+                </li>
+                <li class="mb-4">
+                    <strong>Wage Accuracy:</strong> Daily wages are used to calculate the integrated project costs
+                    automatically.
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

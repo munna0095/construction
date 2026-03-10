@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 mb-md-5 flex-wrap gap-3 page-header-flex">
+    <div>
+        <h2 class="fw-bold" style="color: #166534;">Project Portfolio</h2>
+        <p class="text-muted mb-0">Tracking construction sites and integrated resource costs.</p>
+    </div>
+    <a href="{{ url_for('projects.add') }}" class="btn btn-premium">
+        <i class="fas fa-plus me-2"></i> New Project Site
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for p in projects %}
+    <div class="col-sm-6 col-xl-4">
+        <div class="glass-card h-100 d-flex flex-column" style="border-top: 4px solid var(--accent-color);">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="icon-box bg-info bg-opacity-10 p-3 rounded-4">
+                    <i class="fas fa-building-circle-check text-info fs-4"></i>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end glass-card border-0 shadow-lg">
+                        <li><a class="dropdown-item" href="{{ url_for('projects.edit', id=p.info.id) }}"><i
+                                    class="fas fa-edit me-2 small"></i>Edit Details</a></li>
+                        <li>
+                            <hr class="dropdown-divider border-success border-opacity-10">
+                        </li>
+                        <li>
+                            <form action="{{ url_for('projects.delete', id=p.info.id) }}" method="POST">
+                                <button type="submit" class="dropdown-item text-danger"
+                                    onclick="return confirm('Delete project and all linked data?')">
+                                    <i class="fas fa-trash me-2 small"></i>Delete Project
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-1 text-dark">{{ p.info.name }}</h5>
+            <p class="small text-muted mb-4 text-truncate"><i class="fas fa-map-marker-alt me-2"></i>{{ p.info.location
+                or 'Site
+                location not set' }}</p>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <div class="p-2 p-md-3 bg-light bg-opacity-50 rounded-3 text-center">
+                        <small class="text-muted d-block tiny fw-bold text-uppercase mb-1">Site Expenses</small>
+                        <span class="fw-bold text-success" style="font-size: clamp(0.85rem, 2vw, 1.25rem);">₹{{
+                            "%.2f"|format(p.total_cost) }}</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 p-md-3 bg-light bg-opacity-50 rounded-3 text-center">
+                        <small class="text-muted d-block tiny fw-bold text-uppercase mb-1">Labour</small>
+                        <span class="fw-bold text-primary" style="font-size: clamp(0.85rem, 2vw, 1.25rem);">{{
+                            p.labour_count }} Active</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-auto">
+                <a href="{{ url_for('projects.view', id=p.info.id) }}"
+                    class="btn btn-outline-info w-100 border-opacity-25 py-2">
+                    Open Project Panel <i class="fas fa-arrow-right ms-2 mt-1 small"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 py-5 text-center">
+        <div class="glass-card py-5">
+            <i class="fas fa-folder-open display-4 text-muted mb-3"></i>
+            <h5 class="text-muted">No active projects found.</h5>
+            <p class="text-muted small">Start by creating your first construction site for SIDDHI CONSTRUCTION.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('materials.index') }}"
+                    class="text-decoration-none">Materials Management</a></li>
+            <li class="breadcrumb-item active text-muted" aria-current="page">Add Material</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold">Add New Material Record</h2>
+    <p class="text-muted">Register a new material item for inventory tracking.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="glass-card shadow-lg p-4">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <label for="name" class="form-label text-muted small fw-bold">MATERIAL NAME</label>
+                        <input type="text" class="form-control bg-dark border-secondary text-white py-2" id="name"
+                            name="name" placeholder="e.g., Cement, Sand, Bricks" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="unit" class="form-label text-muted small fw-bold">UNIT OF MEASUREMENT</label>
+                        <select class="form-select bg-dark border-secondary text-white py-2" id="unit" name="unit"
+                            required>
+                            <option value="" selected disabled>Select unit...</option>
+                            <option value="Bags">Bags</option>
+                            <option value="kg">kg</option>
+                            <option value="Cum">Cubic Meters (Cum)</option>
+                            <option value="Nos">Numbers (Nos)</option>
+                            <option value="Feet">Feet</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="stock_quantity" class="form-label text-muted small fw-bold">STOCK QUANTITY</label>
+                        <input type="number" step="0.01" class="form-control bg-dark border-secondary text-white py-2"
+                            id="stock_quantity" name="stock_quantity" value="0.0" required>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="unit_price" class="form-label text-muted small fw-bold">UNIT PRICE (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-white">₹</span>
+                            <input type="number" step="0.01"
+                                class="form-control bg-dark border-secondary text-white py-2" id="unit_price"
+                                name="unit_price" placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 mt-5">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ url_for('materials.index') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+                            <button type="submit" class="btn btn-premium px-5">Save Material</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-5 d-none d-lg-block">
+        <div class="p-4 rounded-4 bg-info bg-opacity-10 border border-info border-opacity-10 h-100">
+            <h5 class="fw-bold mb-4 text-info"><i class="fas fa-warehouse me-2"></i> Inventory Control</h5>
+            <p class="text-muted small">
+                Accurate unit pricing and quantities are critical for automated inventory valuation reports.
+                <br><br>
+                <b>System Rule:</b> Items with stock below 10 units will be marked as "Low Stock" in the dashboard.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 mb-md-5 flex-wrap gap-3 page-header-flex">
+    <div>
+        <h2 class="fw-bold" style="color: #166534;">Report Dashboard</h2>
+        <p class="text-muted mb-0">Workforce attendance and salary tracking for SIDDHI CONSTRUCTION.</p>
+    </div>
+    <div class="d-flex gap-3 flex-wrap mobile-stack">
+        <div class="bg-light px-3 py-2 rounded-3 border border-success border-opacity-10 d-none d-md-block">
+            <small class="text-muted d-block tiny fw-bold text-uppercase mb-1">CURRENT CYCLE</small>
+            <span class="small fw-bold">{{ week_range }}</span>
+        </div>
+        <a href="{{ url_for('reports.download_report', start_date=week_start, end_date=week_end) }}"
+            class="btn btn-premium d-flex align-items-center justify-content-center">
+            <i class="fas fa-file-pdf me-2"></i> Download This Report
+        </a>
+    </div>
+</div>
+
+<!-- Cycle Controls -->
+<div class="glass-card shadow-sm border-0 p-3 p-md-4 mb-4 mb-md-5">
+    <form method="GET" class="row g-3 align-items-end">
+        <div class="col-6 col-md-3">
+            <label class="small fw-bold text-muted mb-2 text-uppercase">Start Date</label>
+            <input type="date" name="start_date" class="form-control rounded-3" value="{{ week_start }}">
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="small fw-bold text-muted mb-2 text-uppercase">End Date</label>
+            <input type="date" name="end_date" class="form-control rounded-3" value="{{ week_end }}">
+        </div>
+        <div class="col-12 col-md-4">
+            <label class="small fw-bold text-muted mb-2 text-uppercase">Historical Presets</label>
+            <div class="btn-group w-100">
+                <a href="{{ url_for('reports.index', preset='last_week') }}"
+                    class="btn btn-outline-secondary btn-sm {% if preset == 'last_week' %}active{% endif %}">Last
+                    Week</a>
+                <a href="{{ url_for('reports.index', preset='last_7_days') }}"
+                    class="btn btn-outline-secondary btn-sm {% if preset == 'last_7_days' %}active{% endif %}">Last 7
+                    Days</a>
+                <a href="{{ url_for('reports.index') }}"
+                    class="btn btn-outline-secondary btn-sm {% if not preset %}active{% endif %}">Current</a>
+            </div>
+        </div>
+        <div class="col-12 col-md-2">
+            <button type="submit" class="btn btn-success w-100 rounded-3">
+                <i class="fas fa-sync-alt me-2"></i> Update Cycle
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="row g-4 mb-4 mb-md-5">
+    <!-- Labour Stats -->
+    <div class="col-6 col-xl-3">
+        <div class="glass-card shadow-sm border-0">
+            <h6 class="text-muted small fw-bold mb-3 text-uppercase">Total Workers</h6>
+            <div class="d-flex align-items-end justify-content-between">
+                <h2 class="fw-bold mb-0">{{ labour_count }}</h2>
+                <div class="text-primary"><i class="fas fa-users fs-4"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="glass-card shadow-sm border-0 p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <h5 class="fw-bold mb-0"><i class="fas fa-table-list me-2 text-success"></i> Workforce Attendance &
+                    Salary Report</h5>
+                <span class="small text-muted italic">Showing {{ cycle_days|length }} days in this cycle</span>
+            </div>
+
+            <!-- Mobile: Card layout for small screens -->
+            <div class="d-block d-md-none">
+                {% for row in weekly_report %}
+                <div class="glass-card mb-3 p-3" style="border-left: 3px solid #22c55e;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <a href="{{ url_for('labour.edit', id=row.id) }}"
+                            class="text-decoration-none fw-bold text-dark">
+                            {{ row.name }}
+                        </a>
+                        <span class="badge bg-success bg-opacity-10 text-success small">Sr {{ row.sr }}</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                        {% for i in range(cycle_days|length) %}
+                        <div class="text-center" style="min-width: 32px;">
+                            <div class="tiny text-muted">{{ cycle_days[i].strftime('%a') }}</div>
+                            {% if row.days[i] == 'P' %}
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill fw-bold"
+                                style="width: 24px; font-size: 0.65rem;">P</span>
+                            {% elif row.days[i] == 'A' %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill fw-bold"
+                                style="width: 24px; font-size: 0.65rem;">A</span>
+                            {% else %}
+                            <span class="text-muted opacity-25" style="font-size: 0.65rem;">-</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <div>
+                            <span class="text-muted">Present:</span>
+                            <span class="fw-bold">₹{{ "%.2f"|format(row.present_salary) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Fixed:</span>
+                            <span class="fw-bold">₹{{ "%.2f"|format(row.fixed_salary) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Rem:</span>
+                            <span
+                                class="fw-bold {% if row.remaining < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {% if row.remaining < 0 %}-{% endif %}₹{{ "%.2f" |format(row.remaining|abs) }} </span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted fst-italic">No labour data available for this report.</div>
+                {% endfor %}
+            </div>
+
+            <!-- Desktop: Table layout -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover align-middle border-0">
+                    <thead class="bg-light">
+                        <tr class="small text-muted text-uppercase">
+                            <th class="border-0">Sr</th>
+                            <th class="border-0">Labour Name</th>
+                            {% for cd in cycle_days %}
+                            <th class="border-0 text-center" title="{{ cd.strftime('%A, %d %b') }}">
+                                {{ cd.strftime('%d') }}<br><small>{{ cd.strftime('%a') }}</small>
+                            </th>
+                            {% endfor %}
+                            <th class="border-0 text-end">Present Salary</th>
+                            <th class="border-0 text-end">Fixed Salary</th>
+                            <th class="border-0 text-end">Remaining</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in weekly_report %}
+                        <tr>
+                            <td class="small">{{ row.sr }}</td>
+                            <td>
+                                <a href="{{ url_for('labour.edit', id=row.id) }}"
+                                    class="text-decoration-none fw-bold text-dark hover-accent">
+                                    {{ row.name }}
+                                </a>
+                            </td>
+                            {% for status in row.days %}
+                            <td class="text-center">
+                                {% if status == 'P' %}
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill fw-bold"
+                                    style="width: 25px;">P</span>
+                                {% elif status == 'A' %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill fw-bold"
+                                    style="width: 25px;">A</span>
+                                {% else %}
+                                <span class="text-muted opacity-25">-</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            <td class="text-end fw-bold">₹{{ "%.2f"|format(row.present_salary) }}</td>
+                            <td class="text-end">₹{{ "%.2f"|format(row.fixed_salary) }}</td>
+                            <td
+                                class="text-end fw-bold {% if row.remaining < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {% if row.remaining < 0 %}-{% endif %}₹{{ "%.2f" |format(row.remaining|abs) }} </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="{{ 5 + cycle_days|length }}" class="text-center py-5 text-muted fst-italic">No
+                                labour data available for this report.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4 mt-md-5">
+    <div class="col-md-12">
+        <div class="alert alert-success border-0 rounded-4 bg-opacity-10 p-3 p-md-4">
+            <div class="d-flex">
+                <i class="fas fa-info-circle fs-4 me-3 mt-1 text-success d-none d-sm-block"></i>
+                <div>
+                    <h6 class="fw-bold mb-1 text-success">Reporting System Rules</h6>
+                    <ul class="small mb-0 text-muted">
+                        <li><strong>Flexible Cycles:</strong> Use the "Update Cycle" panel to view data for any 7-day
+                            date
+                            range.</li>
+                        <li><strong>7-Day Limit:</strong> Reports are strictly limited to exactly 7 days for width and
+                            clarity.</li>
+                        <li><strong>Historical Data:</strong> Quick presets allow you to jump to Last Week or Last 7
+                            Days
+                            records instantly.</li>
+                        <li><strong>Fixed Salary:</strong> Defined in the individual labour panel as the base expected
+                            salary.</li>
+                        <li><strong>Remaining Amount:</strong> Calculated as
+                            <code>Fixed Salary - Salary for Present Days</code> within the selected range.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const startInput = document.querySelector('input[name="start_date"]');
+        const endInput = document.querySelector('input[name="end_date"]');
+
+        function updateEndDateLimit() {
+            if (startInput.value) {
+                const startDate = new Date(startInput.value);
+                // End date should be start + 6 days for a 7-day range
+                const maxEndDate = new Date(startDate);
+                maxEndDate.setDate(startDate.getDate() + 6);
+
+                const yyyy = maxEndDate.getFullYear();
+                const mm = String(maxEndDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(maxEndDate.getDate()).padStart(2, '0');
+                const formattedMax = `${yyyy}-${mm}-${dd}`;
+
+                // Allow manual selection up to 6 days after start
+                endInput.max = formattedMax;
+
+                // Auto-update end date if it's empty or invalid
+                if (!endInput.value || endInput.value > formattedMax || endInput.value < startInput.value) {
+                    endInput.value = formattedMax;
+                }
+            }
+        }
+
+        startInput.addEventListener('change', updateEndDateLimit);
+        // Also run on load to set initial limits if dates are present
+        if (startInput.value) {
+            const startDate = new Date(startInput.value);
+            const maxEndDate = new Date(startDate);
+            maxEndDate.setDate(startDate.getDate() + 6);
+            const yyyy = maxEndDate.getFullYear();
+            const mm = String(maxEndDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(maxEndDate.getDate()).padStart(2, '0');
+            endInput.max = `${yyyy}-${mm}-${dd}`;
+        }
+    });
+</script>
+{% endblock %}
