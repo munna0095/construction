@@ -55,3 +55,87 @@ def settings():
         return redirect(url_for('auth.settings'))
 
     return render_template('auth/settings.html', title='Admin Settings')
+
+def send_reset_email(user):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    
+    # We will use dummy configuration variables that the user must replace
+    sender_email = "your_email@gmail.com"  # The sender email
+    sender_password = "your_app_password"  # The sender App Password
+    
+    token = user.get_reset_token()
+    # Assuming standard route setup
+    reset_url = url_for('auth.reset_password', token=token, _external=True)
+    
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Password Reset Request"
+    msg["From"] = sender_email
+    msg["To"] = user.email
+    
+    text = f'''To reset your password, visit the following link:
+{reset_url}
+
+If you did not make this request, simply ignore this email and no changes will be made.
+'''
+    msg.attach(MIMEText(text))
+    
+    try:
+        # If credentials are not set, immediately skip the hanging SMTP connection
+        if sender_password == "your_app_password":
+            print("\n" + "="*50)
+            print("RESET URL (Email Not Configured!):")
+            print(reset_url)
+            print("="*50 + "\n")
+            return
+            
+        # We try to connect to Gmail's SMTP server
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=5)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, user.email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print("Failed to send email:", e)
+        # Fallback: Print URL to console for development so user isn't locked out immediately
+        print("\n" + "="*50)
+        print("RESET URL (Use this if email fails):")
+        print(reset_url)
+        print("="*50 + "\n")
+        return False
+
+@bp.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.index'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if user:
+            send_reset_email(user)
+        # We flash success even if email doesn't exist to prevent email discovery
+        flash('Check your email for the instructions to reset your password', 'info')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_password_request.html', title='Reset Password')
+
+@bp.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.index'))
+    user = User.verify_reset_token(token)
+    if not user:
+        flash('That is an invalid or expired token', 'warning')
+        return redirect(url_for('auth.reset_password_request'))
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        if password != confirm_password:
+            flash('Passwords do not match', 'danger')
+            return redirect(url_for('auth.reset_password', token=token))
+        user.set_password(password)
+        db.session.commit()
+        flash('Your password has been updated! You are now able to log in', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_password.html', title='Reset Password')

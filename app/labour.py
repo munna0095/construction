@@ -105,9 +105,10 @@ def edit(id):
                 existing = Attendance.query.filter_by(labour_id=id, date=att_date).first()
                 if existing:
                     existing.status = att_status
-                    # If changed to absent, wage must be 0
                     if att_status == 'Absent':
                         existing.daily_wage = 0.0
+                    elif att_status == 'Present' and existing.daily_wage == 0.0:
+                        existing.daily_wage = labour.daily_wage
                 else:
                     wage = labour.daily_wage if att_status == 'Present' else 0.0
                     new_att = Attendance(labour_id=id, date=att_date, status=att_status, daily_wage=wage)
@@ -123,7 +124,7 @@ def edit(id):
                     try:
                         att_date = datetime.strptime(date_str, '%Y-%m-%d').date()
                         att = Attendance.query.filter_by(labour_id=id, date=att_date).first()
-                        if att and att.status == 'Present':
+                        if att and att.status == 'Present' and att_date >= today:
                             att.daily_wage = float(value)
                     except: pass
             db.session.commit()
@@ -137,6 +138,7 @@ def edit(id):
                 labour.name = request.form.get('name')
                 labour.phone = phone
                 labour.fixed_salary = float(request.form.get('fixed_salary') or 0.0)
+                labour.daily_wage = float(request.form.get('daily_wage') or 0.0)
                 labour.address = request.form.get('address')
                 pid = request.form.get('project_id')
                 labour.project_id = int(pid) if pid else None

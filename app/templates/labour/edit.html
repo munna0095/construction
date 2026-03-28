@@ -111,6 +111,11 @@
                         <input type="text" name="phone" class="form-control" value="{{ labour.phone }}" required>
                     </div>
                     <div class="col-sm-6">
+                        <label class="small fw-bold text-muted">DAILY WAGE (₹)</label>
+                        <input type="number" step="0.01" name="daily_wage" class="form-control"
+                            value="{{ labour.daily_wage or 0.0 }}">
+                    </div>
+                    <div class="col-sm-6">
                         <label class="small fw-bold text-muted">FIXED SALARY (₹)</label>
                         <input type="number" step="0.01" name="fixed_salary" class="form-control"
                             value="{{ labour.fixed_salary or 0.0 }}">
@@ -266,11 +271,11 @@
                                 <td class="text-center text-success fw-bold">{{ row.present }}</td>
                                 <td class="text-center text-danger fw-bold">{{ row.absent }}</td>
                                 <td class="text-end">
-                                    <input type="number" step="0.01" name="wage_{{ row.date }}"
+                                    <input type="number" step="0.01" name="wage_{{ row.date }}" dir="rtl"
                                         class="form-control form-control-sm text-end fw-bold"
-                                        value="{{ '%.2f'|format(row.wage) }}" {% if row.status !='Present' %}readonly
-                                        style="background-color: #f8fafc; color: #94a3b8;" {% else
-                                        %}style="color: #166534;" {% endif %}>
+                                        value="{{ '%.2f'|format(row.wage) }}" {% if row.status != 'Present' or row.date < today.strftime('%Y-%m-%d') %}readonly
+                                        style="background-color: #f8fafc; color: #94a3b8; text-align: right;" {% else
+                                        %}style="color: #166534; text-align: right;" {% endif %}>
                                 </td>
                             </tr>
                             {% endfor %}
