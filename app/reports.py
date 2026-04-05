@@ -16,26 +16,23 @@ def index():
     end_str = request.args.get('end_date')
     preset = request.args.get('preset')
     
-    # Default: Current Week (Sunday-Saturday)
-    idx = (today.weekday() + 1) % 7
+    # Default: Current Week (Sunday-Friday, 6 days)
+    idx = (today.weekday() + 1) % 7 # 0 is Sunday
     week_start = today - timedelta(days=idx)
-    week_end = week_start + timedelta(days=6)
+    week_end = week_start + timedelta(days=5) # Friday
     
     if preset == 'last_week':
         week_start = week_start - timedelta(days=7)
-        week_end = week_start + timedelta(days=6)
-    elif preset == 'last_7_days':
-        week_end = today
-        week_start = today - timedelta(days=6)
+        week_end = week_start + timedelta(days=5)
     elif start_str and end_str:
         try:
             week_start = datetime.strptime(start_str, '%Y-%m-%d').date()
             week_end = datetime.strptime(end_str, '%Y-%m-%d').date()
             
-            # Check for 7-day limit
-            if (week_end - week_start).days >= 7:
+            # Check for 6-day limit
+            if (week_end - week_start).days > 5:
                 from flask import flash
-                flash('Select upto 7 days only', 'danger')
+                flash('Select upto 6 days only', 'danger')
                 # Redirect with original start_date to let user try again
                 return redirect(url_for('reports.index', start_date=start_str))
         except ValueError:
@@ -60,16 +57,20 @@ def index():
     # Number of days in current cycle for the table
     delta = (week_end - week_start).days + 1
     cycle_days = []
-    for d in range(min(delta, 7)): # Limit display to 7 days for width and policy
+    for d in range(min(delta, 6)): # Limit display to 6 days for width and policy (Sunday-Friday)
         cycle_days.append(week_start + timedelta(days=d))
     
+    grand_total_advance = 0.0
+    grand_total_payable = 0.0
+
     for i, l in enumerate(labours):
         row = {
             'sr': i + 1,
             'name': l.name,
             'days': [],
-            'present_salary': 0.0,
-            'fixed_salary': l.fixed_salary or 0.0,
+            'total_days_present': 0,
+            'payable_amount': 0.0,
+            'total_advance': 0.0,
             'id': l.id
         }
         
@@ -85,10 +86,14 @@ def index():
             att = att_day_map.get(cd)
             status = 'P' if att and att.status == 'Present' else ('A' if att and att.status == 'Absent' else '-')
             row['days'].append(status)
+            if status == 'P':
+                row['total_days_present'] += 1
             if att:
-                row['present_salary'] += (att.daily_wage or 0.0)
+                row['payable_amount'] += (att.daily_wage or 0.0)
+                row['total_advance'] += (att.advance or 0.0)
         
-        row['remaining'] = row['fixed_salary'] - row['present_salary']
+        grand_total_advance += row['total_advance']
+        grand_total_payable += row['payable_amount']
         weekly_report.append(row)
 
     return render_template('reports/index.html', 
@@ -99,6 +104,8 @@ def index():
                             avg_daily_wage=avg_daily_wage,
                             weekly_report=weekly_report,
                             cycle_days=cycle_days,
+                            grand_total_advance=grand_total_advance,
+                            grand_total_payable=grand_total_payable,
                             week_start=week_start,
                             week_end=week_end,
                             preset=preset,
@@ -126,22 +133,25 @@ def print_view():
     today = date.today()
     idx = (today.weekday() + 1) % 7
     week_start = today - timedelta(days=idx)
-    week_end = week_start + timedelta(days=6)
+    week_end = week_start + timedelta(days=5) # Friday
     
     if start_str and end_str:
         try:
             week_start = datetime.strptime(start_str, '%Y-%m-%d').date()
             week_end = datetime.strptime(end_str, '%Y-%m-%d').date()
-            # Also limit print view to 7 days
-            if (week_end - week_start).days >= 7:
-                week_end = week_start + timedelta(days=6)
+            # Also limit print view to 6 days
+            if (week_end - week_start).days > 5:
+                week_end = week_start + timedelta(days=5)
         except: pass
 
     labours = Labour.query.all()
     weekly_report = []
     delta = (week_end - week_start).days + 1
-    cycle_days = [week_start + timedelta(days=d) for d in range(min(delta, 7))] 
+    cycle_days = [week_start + timedelta(days=d) for d in range(min(delta, 6))] 
     
+    grand_total_advance = 0.0
+    grand_total_payable = 0.0
+
     for i, l in enumerate(labours):
         # Sum the wages stored in each attendance record for the cycle
         cycle_attendance = Attendance.query.filter(
@@ -152,26 +162,35 @@ def print_view():
         att_day_map = {a.date: a for a in cycle_attendance}
         
         row_days = []
-        cycle_present_salary = 0.0
+        total_days_present = 0
+        cycle_payable = 0.0
+        cycle_advance = 0.0
         for cd in cycle_days:
             att = att_day_map.get(cd)
             status = 'P' if att and att.status == 'Present' else ('A' if att and att.status == 'Absent' else '-')
             row_days.append(status)
+            if status == 'P':
+                total_days_present += 1
             if att:
-                cycle_present_salary += (att.daily_wage or 0.0)
+                cycle_payable += (att.daily_wage or 0.0)
+                cycle_advance += (att.advance or 0.0)
 
         row = {
             'sr': i + 1,
             'name': l.name,
             'days': row_days,
-            'present_salary': cycle_present_salary,
-            'fixed_salary': l.fixed_salary or 0.0
+            'total_days_present': total_days_present,
+            'payable_amount': cycle_payable,
+            'total_advance': cycle_advance
         }
-        row['remaining'] = row['fixed_salary'] - row['present_salary']
+        grand_total_advance += cycle_advance
+        grand_total_payable += cycle_payable
         weekly_report.append(row)
 
     return render_template('reports/print.html', 
                           weekly_report=weekly_report,
                           cycle_days=cycle_days,
+                          grand_total_advance=grand_total_advance,
+                          grand_total_payable=grand_total_payable,
                           week_range=f"{week_start.strftime('%d %b')} - {week_end.strftime('%d %b %Y')}",
                           today=datetime.now())

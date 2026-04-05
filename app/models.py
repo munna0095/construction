@@ -58,6 +58,7 @@ class Attendance(db.Model):
     date = db.Column(db.Date, nullable=False, default=date.today)
     status = db.Column(db.String(20), nullable=False)  # 'Present', 'Absent'
     daily_wage = db.Column(db.Float, default=0.0) # Added in Phase 6 for per-day tracking
+    advance = db.Column(db.Float, default=0.0)
     
     def __repr__(self):
         return f'<Attendance {self.labour_id} {self.date} {self.status}>'
@@ -106,6 +107,12 @@ class Transaction(db.Model):
 
     def __repr__(self):
         return f'<Transaction {self.id}>'
+
+class Settings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    admin_email = db.Column(db.String(120), nullable=True)
+    reminder_time = db.Column(db.String(5), default='19:00') # "HH:MM" format
+    email_sent_date = db.Column(db.Date, nullable=True) # To prevent multiple emails per day
 
 @login_manager.user_loader
 def load_user(id):

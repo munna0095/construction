@@ -13,6 +13,7 @@
         <div class="glass-card">
             <h5 class="fw-bold mb-4">Update Profile</h5>
             <form method="POST">
+                <input type="hidden" name="action" value="auth">
                 <div class="mb-4">
                     <label for="email" class="form-label small fw-bold text-muted">LOGIN EMAIL (ID)</label>
                     <input type="email" class="form-control bg-light border-success border-opacity-25" id="email"
@@ -44,7 +45,25 @@
 
     <div class="col-md-5 offset-md-1">
         <div class="glass-card" style="border-left: 4px solid var(--accent-color);">
-            <h5 class="fw-bold mb-3">Security Tips</h5>
+            <h5 class="fw-bold mb-3">Email Reminder Configuration</h5>
+            <form method="POST">
+                <input type="hidden" name="action" value="email_reminder">
+                <div class="mb-4">
+                    <label for="admin_email" class="form-label small fw-bold text-muted">ADMIN NOTIFICATION EMAIL</label>
+                    <input type="email" class="form-control" id="admin_email" name="admin_email" 
+                        value="{{ app_settings.admin_email if app_settings else '' }}" placeholder="Enter email for daily attendance reminder">
+                </div>
+                <div class="mb-4">
+                    <label for="reminder_time" class="form-label small fw-bold text-muted">DAILY REMINDER TIME (24H)</label>
+                    <input type="time" class="form-control" id="reminder_time" name="reminder_time"
+                        value="{{ app_settings.reminder_time if app_settings else '19:00' }}">
+                </div>
+                <div class="d-flex justify-content-end mb-4">
+                    <button type="submit" class="btn btn-primary px-4">Update Configuration</button>
+                </div>
+            </form>
+
+            <h5 class="fw-bold mb-3 mt-4">Security Tips</h5>
             <ul class="text-muted small">
                 <li class="mb-2">Use a strong password with a mix of letters, numbers, and symbols.</li>
                 <li class="mb-2">Your Login Email is your unique identifier for the system.</li>

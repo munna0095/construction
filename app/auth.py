@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
-from app.models import User
+from app.models import User, Settings
 from app import db
 
 bp = Blueprint('auth', __name__)
@@ -33,28 +33,44 @@ def logout():
 @bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    if request.method == 'POST':
-        new_email = request.form.get('email')
-        new_password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-
-        if new_password and new_password != confirm_password:
-            flash('Passwords do not match', 'danger')
-            return redirect(url_for('auth.settings'))
-
-        if User.query.filter(User.email == new_email, User.id != current_user.id).first():
-            flash('Email already in use', 'danger')
-            return redirect(url_for('auth.settings'))
-
-        current_user.email = new_email
-        if new_password:
-            current_user.set_password(new_password)
-        
+    settings_obj = Settings.query.first()
+    if not settings_obj:
+        settings_obj = Settings(admin_email='', reminder_time='19:00')
+        db.session.add(settings_obj)
         db.session.commit()
-        flash('Settings updated successfully', 'success')
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'auth':
+            new_email = request.form.get('email')
+            new_password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
+
+            if new_password and new_password != confirm_password:
+                flash('Passwords do not match', 'danger')
+                return redirect(url_for('auth.settings'))
+
+            if User.query.filter(User.email == new_email, User.id != current_user.id).first():
+                flash('Email already in use', 'danger')
+                return redirect(url_for('auth.settings'))
+
+            current_user.email = new_email
+            if new_password:
+                current_user.set_password(new_password)
+            
+            db.session.commit()
+            flash('Admin credentials updated successfully', 'success')
+            
+        elif action == 'email_reminder':
+            settings_obj.admin_email = request.form.get('admin_email')
+            settings_obj.reminder_time = request.form.get('reminder_time')
+            db.session.commit()
+            flash('Email reminder settings updated successfully', 'success')
+            
         return redirect(url_for('auth.settings'))
 
-    return render_template('auth/settings.html', title='Admin Settings')
+    return render_template('auth/settings.html', title='Admin Settings', app_settings=settings_obj)
 
 def send_reset_email(user):
     import smtplib

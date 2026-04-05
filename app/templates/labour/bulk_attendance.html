@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-4 mb-md-5">
+    <nav aria-label="breadcrumb" class="mb-3 mb-md-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('labour.index') }}" class="text-decoration-none">Labour Management</a></li>
+            <li class="breadcrumb-item active text-muted">Bulk Attendance</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold" style="color: #166534;">Bulk Attendance Entry</h2>
+            <p class="text-muted mb-0">Quickly mark present or absent for all workers on a specific date.</p>
+        </div>
+        <form method="GET" class="d-flex gap-2 align-items-center bg-light p-2 rounded-3 border">
+            <label class="small fw-bold text-muted mb-0 text-nowrap"><i class="far fa-calendar-alt me-1"></i> DATE:</label>
+            <input type="date" name="date" class="form-control form-control-sm border-0 bg-transparent fw-bold" style="outline: none; box-shadow: none;" value="{{ att_date.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') }}" onchange="this.form.submit()">
+        </form>
+    </div>
+</div>
+
+<div class="glass-card shadow-sm border-0 p-3 p-md-4 mb-4 border-top border-4 border-success">
+    <div id="bulk-att-form">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="input-group input-group-sm shadow-sm" style="max-width: 280px;">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="labourSearch" class="form-control border-start-0 ps-0 text-dark fw-bold" placeholder="Search by labour name...">
+            </div>
+            <div class="small fw-bold text-muted d-none d-md-block">Select all: 
+                <button type="button" class="btn btn-sm btn-link text-success text-decoration-none py-0" onclick="selectAll('Present')">Present</button> | 
+                <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none py-0" onclick="selectAll('Absent')">Absent</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="small text-muted text-uppercase">
+                        <th style="width: 50px;">Sr</th>
+                        <th>Labour Name</th>
+                        <th class="text-center" style="width: 250px;">Attendance Status</th>
+                        <th class="text-center" style="width: 150px;">Advance (₹)</th>
+                        <th class="text-center" style="width: 160px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in labours %}
+                    {% set existing_att = att_map.get(l.id) %}
+                    {% set p_checked = existing_att and existing_att.status == 'Present' %}
+                    {% set a_checked = (existing_att and existing_att.status == 'Absent') or not existing_att %}
+                    {% set has_existing = existing_att is not none %}
+                    <tr class="labour-row" data-name="{{ l.name|lower }}">
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td class="fw-bold fs-6 text-dark">{{ l.name }} <br><small class="text-muted fw-normal" style="font-size: 0.75rem;"><i class="fas fa-phone-alt me-1"></i>{{ l.phone }}</small></td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <input type="radio" class="btn-check status-radio" name="status_{{ l.id }}" id="p_{{ l.id }}" value="Present" {% if p_checked %}checked{% endif %} {% if has_existing %}disabled{% endif %}>
+                                <label class="btn btn-outline-success px-3 py-1 fw-bold" for="p_{{ l.id }}">Present</label>
+                                
+                                <input type="radio" class="btn-check status-radio" name="status_{{ l.id }}" id="a_{{ l.id }}" value="Absent" {% if a_checked %}checked{% endif %} {% if has_existing %}disabled{% endif %}>
+                                <label class="btn btn-outline-danger px-3 py-1 fw-bold" for="a_{{ l.id }}">Absent</label>
+                            </div>
+                        </td>
+                        <td>
+                            {% set adv = existing_att.advance if existing_att and existing_att.advance else "" %}
+                            <input type="number" id="adv_{{ l.id }}" step="0.01" min="0" class="form-control text-center bg-light fw-bold text-success" name="advance_{{ l.id }}" placeholder="0.0" value="{{ adv }}" {% if has_existing %}readonly{% endif %}>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" id="saveBtn_{{ l.id }}" class="btn btn-sm px-3 fw-bold" 
+                                style="background-color: {% if has_existing %}lightgreen{% else %}#166534{% endif %}; color: {% if has_existing %}#166534{% else %}white{% endif %}; border: 1px solid #166534;" 
+                                onclick="saveRow({{ l.id }})" {% if has_existing %}disabled{% endif %}>Save</button>
+                            <button type="button" id="editBtn_{{ l.id }}" class="btn btn-sm btn-secondary px-3 ms-1 {% if not has_existing %}d-none{% endif %}" onclick="editRow({{ l.id }})">Edit</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted fst-italic">No active labour profiles found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('labourSearch');
+    const rows = document.querySelectorAll('.labour-row');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name');
+                if (name.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+
+function selectAll(val) {
+    document.querySelectorAll('.status-radio').forEach(radio => {
+        if(radio.value === val) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    function toggleAdvanceField(radio) {
+        const labourId = radio.name.split('_')[1];
+        const advInput = document.getElementById('adv_' + labourId);
+        
+        if (advInput) {
+            if (radio.value === 'Absent') {
+                advInput.readOnly = true;
+                advInput.value = ''; 
+                advInput.classList.add('opacity-50');
+            } else {
+                advInput.readOnly = false;
+                advInput.classList.remove('opacity-50');
+            }
+        }
+    }
+
+    document.querySelectorAll('.status-radio').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if(this.checked) {
+                toggleAdvanceField(this);
+            }
+        });
+        
+        if(radio.checked) {
+            toggleAdvanceField(radio);
+        }
+    });
+});
+
+function saveRow(labourId) {
+    const radioInputs = document.getElementsByName('status_' + labourId);
+    let status = null;
+    for (let i = 0; i < radioInputs.length; i++) {
+        if (radioInputs[i].checked) {
+            status = radioInputs[i].value;
+            break;
+        }
+    }
+    
+    if (!status) {
+        alert("Please select a status first.");
+        return;
+    }
+    
+    // Save button loading state
+    const saveBtn = document.getElementById('saveBtn_' + labourId);
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    saveBtn.disabled = true;
+
+    const advance = document.getElementById('adv_' + labourId).value;
+    const dateStr = document.querySelector('input[name="date"]').value;
+    
+    const data = {
+        labour_id: labourId,
+        date: dateStr,
+        status: status,
+        advance: advance || 0
+    };
+    
+    fetch('/labour/api/save_attendance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        saveBtn.innerHTML = originalText;
+        if (data.status === 'success') {
+            lockRow(labourId);
+        } else {
+            alert(data.message || 'Error saving data.');
+            saveBtn.disabled = false;
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        alert('Failed to connect to server.');
+    });
+}
+
+function lockRow(labourId) {
+    const saveBtn = document.getElementById('saveBtn_' + labourId);
+    const editBtn = document.getElementById('editBtn_' + labourId);
+    const advInput = document.getElementById('adv_' + labourId);
+    const radioInputs = document.getElementsByName('status_' + labourId);
+    
+    saveBtn.style.backgroundColor = 'lightgreen';
+    saveBtn.style.color = '#166534';
+    saveBtn.disabled = true;
+    
+    editBtn.classList.remove('d-none');
+    
+    advInput.readOnly = true;
+    radioInputs.forEach(r => r.disabled = true);
+}
+
+function editRow(labourId) {
+    const saveBtn = document.getElementById('saveBtn_' + labourId);
+    const editBtn = document.getElementById('editBtn_' + labourId);
+    const advInput = document.getElementById('adv_' + labourId);
+    const radioInputs = document.getElementsByName('status_' + labourId);
+    
+    saveBtn.style.backgroundColor = '#166534';
+    saveBtn.style.color = 'white';
+    saveBtn.disabled = false;
+    
+    editBtn.classList.add('d-none');
+    
+    radioInputs.forEach(r => r.disabled = false);
+    
+    let isPresent = false;
+    for (let i = 0; i < radioInputs.length; i++) {
+        if (radioInputs[i].checked && radioInputs[i].value === 'Present') {
+            isPresent = true;
+            break;
+        }
+    }
+    if (isPresent) {
+        advInput.readOnly = false;
+        advInput.classList.remove('opacity-50');
+    }
+}
+</script>
+{% endblock %}

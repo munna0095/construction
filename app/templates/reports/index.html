@@ -101,18 +101,12 @@
                     </div>
                     <div class="d-flex justify-content-between small">
                         <div>
-                            <span class="text-muted">Present:</span>
-                            <span class="fw-bold">₹{{ "%.2f"|format(row.present_salary) }}</span>
+                            <span class="text-muted">Total Advance:</span>
+                            <span class="fw-bold text-danger">₹{{ "%.0f"|format(row.total_advance) }}</span>
                         </div>
                         <div>
-                            <span class="text-muted">Fixed:</span>
-                            <span class="fw-bold">₹{{ "%.2f"|format(row.fixed_salary) }}</span>
-                        </div>
-                        <div>
-                            <span class="text-muted">Rem:</span>
-                            <span
-                                class="fw-bold {% if row.remaining < 0 %}text-danger{% else %}text-success{% endif %}">
-                                {% if row.remaining < 0 %}-{% endif %}₹{{ "%.2f" |format(row.remaining|abs) }} </span>
+                            <span class="text-muted">Total Payable:</span>
+                            <span class="fw-bold text-success">₹{{ "%.0f"|format(row.payable_amount) }}</span>
                         </div>
                     </div>
                 </div>
@@ -133,9 +127,9 @@
                                 {{ cd.strftime('%d') }}<br><small>{{ cd.strftime('%a') }}</small>
                             </th>
                             {% endfor %}
-                            <th class="border-0 text-end">Present Salary</th>
-                            <th class="border-0 text-end">Fixed Salary</th>
-                            <th class="border-0 text-end">Remaining</th>
+                            <th class="border-0 text-center">Days Present</th>
+                            <th class="border-0 text-end">Total Advance</th>
+                            <th class="border-0 text-end">Total Payable</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -161,11 +155,9 @@
                                 {% endif %}
                             </td>
                             {% endfor %}
-                            <td class="text-end fw-bold">₹{{ "%.2f"|format(row.present_salary) }}</td>
-                            <td class="text-end">₹{{ "%.2f"|format(row.fixed_salary) }}</td>
-                            <td
-                                class="text-end fw-bold {% if row.remaining < 0 %}text-danger{% else %}text-success{% endif %}">
-                                {% if row.remaining < 0 %}-{% endif %}₹{{ "%.2f" |format(row.remaining|abs) }} </td>
+                            <td class="text-center fw-bold">{{ row.total_days_present }}</td>
+                            <td class="text-end fw-bold text-danger">₹{{ "%.0f"|format(row.total_advance) }}</td>
+                            <td class="text-end fw-bold text-success">₹{{ "%.0f"|format(row.payable_amount) }}</td>
                         </tr>
                         {% else %}
                         <tr>
@@ -174,6 +166,13 @@
                         </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot class="bg-light">
+                        <tr class="border-top border-2 border-dark">
+                            <td colspan="{{ 2 + cycle_days|length + 1 }}" class="text-end fw-bold align-middle">GRAND TOTAL:</td>
+                            <td class="text-end fw-bold text-danger h5 mb-0 align-middle">₹{{ "%.0f"|format(grand_total_advance) }}</td>
+                            <td class="text-end fw-bold text-success h5 mb-0 align-middle">₹{{ "%.0f"|format(grand_total_payable) }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -189,18 +188,10 @@
                     <h6 class="fw-bold mb-1 text-success">Reporting System Rules</h6>
                     <ul class="small mb-0 text-muted">
                         <li><strong>Flexible Cycles:</strong> Use the "Update Cycle" panel to view data for any 7-day
-                            date
-                            range.</li>
-                        <li><strong>7-Day Limit:</strong> Reports are strictly limited to exactly 7 days for width and
-                            clarity.</li>
-                        <li><strong>Historical Data:</strong> Quick presets allow you to jump to Last Week or Last 7
-                            Days
-                            records instantly.</li>
-                        <li><strong>Fixed Salary:</strong> Defined in the individual labour panel as the base expected
-                            salary.</li>
-                        <li><strong>Remaining Amount:</strong> Calculated as
-                            <code>Fixed Salary - Salary for Present Days</code> within the selected range.
-                        </li>
+                            date range.</li>
+                        <li><strong>Advances:</strong> Deductions or advances taken during the cycle.</li>
+                        <li><strong>Total Payable:</strong> Calculated as <code>SUM(Daily Wages)</code> where daily wage
+                            is automatically adjusted for advances taken.</li>
                     </ul>
                 </div>
             </div>
@@ -216,16 +207,16 @@
         function updateEndDateLimit() {
             if (startInput.value) {
                 const startDate = new Date(startInput.value);
-                // End date should be start + 6 days for a 7-day range
+                // End date should be start + 5 days for a 6-day range
                 const maxEndDate = new Date(startDate);
-                maxEndDate.setDate(startDate.getDate() + 6);
+                maxEndDate.setDate(startDate.getDate() + 5);
 
                 const yyyy = maxEndDate.getFullYear();
                 const mm = String(maxEndDate.getMonth() + 1).padStart(2, '0');
                 const dd = String(maxEndDate.getDate()).padStart(2, '0');
                 const formattedMax = `${yyyy}-${mm}-${dd}`;
 
-                // Allow manual selection up to 6 days after start
+                // Allow manual selection up to 5 days after start
                 endInput.max = formattedMax;
 
                 // Auto-update end date if it's empty or invalid
@@ -240,7 +231,7 @@
         if (startInput.value) {
             const startDate = new Date(startInput.value);
             const maxEndDate = new Date(startDate);
-            maxEndDate.setDate(startDate.getDate() + 6);
+            maxEndDate.setDate(startDate.getDate() + 5);
             const yyyy = maxEndDate.getFullYear();
             const mm = String(maxEndDate.getMonth() + 1).padStart(2, '0');
             const dd = String(maxEndDate.getDate()).padStart(2, '0');

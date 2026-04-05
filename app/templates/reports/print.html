@@ -96,9 +96,9 @@
                     <th rowspan="2">Labour Name</th>
                     <th colspan="{{ cycle_days|length }}" class="small">Attendance ({{ cycle_days[0].strftime('%d %b')
                         }} - {{ cycle_days[-1].strftime('%d %b') if cycle_days|length > 1 else '' }})</th>
-                    <th rowspan="2">Present Salary</th>
-                    <th rowspan="2">Fixed Salary</th>
-                    <th rowspan="2">Remaining</th>
+                    <th rowspan="2">Days<br>Present</th>
+                    <th rowspan="2">Total Advance</th>
+                    <th rowspan="2">Total Payable</th>
                 </tr>
                 <tr>
                     {% for cd in cycle_days %}
@@ -118,13 +118,19 @@
                         {% else %}-{% endif %}
                     </td>
                     {% endfor %}
-                    <td class="text-end">₹{{ "%.2f"|format(row.present_salary) }}</td>
-                    <td class="text-end">₹{{ "%.2f"|format(row.fixed_salary) }}</td>
-                    <td class="text-end fw-bold {% if row.remaining < 0 %}text-danger{% endif %}">
-                        {% if row.remaining < 0 %}-{% endif %}₹{{ "%.2f" |format(row.remaining|abs) }} </td>
+                    <td class="text-center fw-bold">{{ row.total_days_present }}</td>
+                    <td class="text-end fw-bold text-danger">₹{{ "%.0f"|format(row.total_advance) }}</td>
+                    <td class="text-end fw-bold text-success">₹{{ "%.0f"|format(row.payable_amount) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
+            <tfoot class="bg-light">
+                <tr style="border-top: 2px solid black;">
+                    <td colspan="{{ 2 + cycle_days|length + 1 }}" class="text-end fw-bold align-middle">GRAND TOTAL:</td>
+                    <td class="text-end fw-bold text-danger align-middle">₹{{ "%.0f"|format(grand_total_advance) }}</td>
+                    <td class="text-end fw-bold text-success align-middle">₹{{ "%.0f"|format(grand_total_payable) }}</td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 
@@ -134,8 +140,8 @@
                 <h6 class="fw-bold small mb-1">Important Notes:</h6>
                 <ul class="mb-0" style="font-size: 9px;">
                     <li>Report generated automatically for SIDDHI CONSTRUCTION internal audit.</li>
-                    <li>Salary calculations: (Present Days Count) × (Daily Wage).</li>
-                    <li>Remaining amount = Fixed Salary - Present Earnings for the cycle.</li>
+                    <li>Salary calculations: (Present Days Count) × (Daily Wage) minus any advances.</li>
+                    <li>Advances: Manually entered deductions per day.</li>
                     <li>Payment statuses for individual expenses are tracked in project panels.</li>
                 </ul>
             </div>

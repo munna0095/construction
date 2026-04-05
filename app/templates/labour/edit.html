@@ -112,13 +112,13 @@
                     </div>
                     <div class="col-sm-6">
                         <label class="small fw-bold text-muted">DAILY WAGE (₹)</label>
-                        <input type="number" step="0.01" name="daily_wage" class="form-control"
-                            value="{{ labour.daily_wage or 0.0 }}">
+                        <input type="number" step="1" name="daily_wage" class="form-control"
+                            value="{{ '%.0f'|format(labour.daily_wage or 0.0) }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="small fw-bold text-muted">FIXED SALARY (₹)</label>
-                        <input type="number" step="0.01" name="fixed_salary" class="form-control"
-                            value="{{ labour.fixed_salary or 0.0 }}">
+                        <label class="small fw-bold text-muted">ADVANCE LOAN (₹)</label>
+                        <input type="number" step="1" name="fixed_salary" class="form-control"
+                            value="{{ '%.0f'|format(labour.fixed_salary or 0.0) }}">
                     </div>
                     <div class="col-12">
                         <label class="small fw-bold text-muted">ASSIGNED PROJECT</label>
@@ -141,29 +141,6 @@
             </form>
         </div>
 
-        <div class="glass-card shadow-sm border-start border-4 border-success">
-            <h5 class="fw-bold mb-3">Attendance Entry</h5>
-            <form method="POST" id="attendance-form">
-                <input type="hidden" name="action" value="save_attendance">
-                <div class="mb-3">
-                    <label class="small fw-bold text-muted">ATTENDANCE DATE</label>
-                    <input type="date" name="att_date" id="att_date" class="form-control"
-                        value="{{ today.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') }}" required>
-                </div>
-                <div class="d-flex gap-3 mb-4">
-                    <div class="flex-grow-1">
-                        <input type="radio" class="btn-check" name="att_status" id="present_radio" value="Present"
-                            checked>
-                        <label class="btn btn-outline-success w-100 py-2 fw-bold" for="present_radio">Present</label>
-                    </div>
-                    <div class="flex-grow-1">
-                        <input type="radio" class="btn-check" name="att_status" id="absent_radio" value="Absent">
-                        <label class="btn btn-outline-danger w-100 py-2 fw-bold" for="absent_radio">Absent</label>
-                    </div>
-                </div>
-                <button type="submit" id="save-att-btn" class="btn btn-premium w-100">Save Daily Attendance</button>
-            </form>
-        </div>
     </div>
 
     <!-- Right Column: Monthly Calendar -->
@@ -259,7 +236,8 @@
                                 <th>DAY</th>
                                 <th class="text-center">PRESENT</th>
                                 <th class="text-center">ABSENT</th>
-                                <th class="text-end" style="min-width: 130px;">DAILY WAGE (₹)</th>
+                                <th class="text-end" style="min-width: 100px;">ADVANCE (₹)</th>
+                                <th class="text-end" style="min-width: 130px;">FIX DAILY WAGES (₹)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -271,50 +249,29 @@
                                 <td class="text-center text-success fw-bold">{{ row.present }}</td>
                                 <td class="text-center text-danger fw-bold">{{ row.absent }}</td>
                                 <td class="text-end">
-                                    <input type="number" step="0.01" name="wage_{{ row.date }}" dir="rtl"
+                                    <input type="text" 
                                         class="form-control form-control-sm text-end fw-bold"
-                                        value="{{ '%.2f'|format(row.wage) }}" {% if row.status != 'Present' or row.date < today.strftime('%Y-%m-%d') %}readonly
-                                        style="background-color: #f8fafc; color: #94a3b8; text-align: right;" {% else
-                                        %}style="color: #166534; text-align: right;" {% endif %}>
+                                        value="{{ '%.0f'|format(row.advance) }}" readonly
+                                        style="background-color: transparent; border: none; color: {% if row.status == 'Present' and row.advance > 0 %}#991b1b{% else %}#94a3b8{% endif %}; text-align: right;">
+                                </td>
+                                <td class="text-end">
+                                    <input type="text" id="wage_{{ row.date }}"
+                                        class="form-control form-control-sm text-end fw-bold wage-calc"
+                                        value="{{ '%.0f'|format(row.wage) }}" readonly
+                                        style="background-color: transparent; border: none; color: {% if row.status == 'Present' %}#166534{% else %}#94a3b8{% endif %}; text-align: right;">
                                 </td>
                             </tr>
                             {% endfor %}
                             <tr class="bg-success bg-opacity-10 py-3">
-                                <td colspan="5" class="text-end fw-bold align-middle">TOTAL SALARY FOR THE WEEK</td>
-                                <td class="text-end fw-bold text-success h5 mb-0 align-middle">₹{{
-                                    "%.2f"|format(total_weekly_wage) }}
+                                <td colspan="6" class="text-end fw-bold align-middle">TOTAL PAYABLE FOR THE WEEK</td>
+                                <td class="text-end fw-bold text-success h5 mb-0 align-middle" id="total_weekly_wage">₹{{
+                                    "%.0f"|format(total_weekly_wage) }}
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="text-end mt-3">
-                    <button type="submit" class="btn btn-primary btn-sm px-4">Save Weekly Wages</button>
-                </div>
             </form>
-
-            <div class="row mt-4">
-                <div class="col-md-6 offset-md-6">
-                    <div class="bg-light rounded-4 p-3 p-md-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-muted fw-bold small">TOTAL WEEKLY SALARY</span>
-                            <span class="fw-bold text-dark">₹{{ "%.2f"|format(total_weekly_wage) }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-muted fw-bold small">FIXED SALARY CONTEXT</span>
-                            <span class="fw-bold text-primary">₹{{ "%.2f"|format(labour.fixed_salary or 0) }}</span>
-                        </div>
-                        <hr class="my-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-muted fw-bold small">REMAINING SALARY BALANCE</span>
-                            {% set balance = (labour.fixed_salary or 0) - total_weekly_wage %}
-                            <span
-                                class="h4 fw-bold {% if balance < 0 %}text-danger{% else %}text-success{% endif %} mb-0">
-                                {% if balance < 0 %}-{% endif %}₹{{ "%.2f" |format(balance|abs) }} </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -343,6 +300,37 @@
 
         attDateInput.addEventListener('change', checkDate);
         checkDate();
+
+        // Advance calculation logic
+        function calculateTotals() {
+            let total = 0;
+            document.querySelectorAll('.wage-calc').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.getElementById('total_weekly_wage').textContent = '₹' + total.toFixed(0);
+            const summary = document.getElementById('total_weekly_summary');
+            if(summary) summary.textContent = '₹' + total.toFixed(0);
+        }
+
+        document.querySelectorAll('.advance-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const date = this.getAttribute('data-date');
+                const base = parseFloat(this.getAttribute('data-base')) || 0;
+                let advance = parseFloat(this.value) || 0;
+                
+                const wageBox = document.getElementById(`wage_${date}`);
+                if(wageBox) {
+                    let newWage = base - advance;
+                    wageBox.value = newWage.toFixed(0);
+                }
+                calculateTotals();
+            });
+
+            // Auto save when advance input loses focus (after changing value)
+            input.addEventListener('change', function() {
+                this.form.submit();
+            });
+        });
     });
 </script>
 {% endblock %}

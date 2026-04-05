@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
 from app import db
 from app.models import Labour, Project, Attendance
@@ -36,6 +36,76 @@ def index():
         })
         
     return render_template('labour/index.html', labours=labour_data, title='Labour Management')
+
+@bp.route('/bulk_attendance', methods=['GET'])
+@login_required
+def bulk_attendance():
+    today = date.today()
+    att_date_str = request.args.get('date', today.strftime('%Y-%m-%d'))
+    try:
+        att_date = datetime.strptime(att_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        att_date = today
+
+    labours = Labour.query.order_by(Labour.name).all()
+    existing_atts = Attendance.query.filter_by(date=att_date).all()
+    att_map = {att.labour_id: att for att in existing_atts}
+
+    return render_template('labour/bulk_attendance.html', 
+                          labours=labours, 
+                          att_date=att_date,
+                          today=today,
+                          att_map=att_map)
+
+@bp.route('/api/save_attendance', methods=['POST'])
+@login_required
+def api_save_attendance():
+    data = request.json
+    labour_id = data.get('labour_id')
+    date_str = data.get('date')
+    status = data.get('status')
+    
+    try:
+        advance_val = float(data.get('advance', 0))
+    except (ValueError, TypeError):
+        advance_val = 0.0
+
+    if not all([labour_id, date_str, status]):
+        return jsonify({'status': 'error', 'message': 'Missing data'}), 400
+        
+    try:
+        att_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        today = date.today()
+        if att_date > today:
+            return jsonify({'status': 'error', 'message': 'Future dates not allowed'}), 400
+            
+        labour = Labour.query.get(labour_id)
+        if not labour:
+            return jsonify({'status': 'error', 'message': 'Labour not found'}), 404
+            
+        existing = Attendance.query.filter_by(labour_id=labour.id, date=att_date).first()
+        
+        if existing:
+            existing.status = status
+            if status == 'Absent':
+                existing.daily_wage = 0.0
+                existing.advance = 0.0
+            elif status == 'Present':
+                existing.advance = advance_val
+                existing.daily_wage = labour.daily_wage - advance_val
+        else:
+            adv = advance_val if status == 'Present' else 0.0
+            wage = labour.daily_wage - adv if status == 'Present' else 0.0
+            new_att = Attendance(labour_id=labour.id, date=att_date, status=status, daily_wage=wage, advance=adv)
+            db.session.add(new_att)
+            
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Saved successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
@@ -107,25 +177,28 @@ def edit(id):
                     existing.status = att_status
                     if att_status == 'Absent':
                         existing.daily_wage = 0.0
+                        existing.advance = 0.0
                     elif att_status == 'Present' and existing.daily_wage == 0.0:
                         existing.daily_wage = labour.daily_wage
                 else:
                     wage = labour.daily_wage if att_status == 'Present' else 0.0
-                    new_att = Attendance(labour_id=id, date=att_date, status=att_status, daily_wage=wage)
+                    new_att = Attendance(labour_id=id, date=att_date, status=att_status, daily_wage=wage, advance=0.0)
                     db.session.add(new_att)
                 db.session.commit()
                 flash(f'Attendance marked for {att_date_str}', 'success')
         
         elif action == 'update_weekly_wages':
-            # Handle list of wages from the table
+            # Handle list of advances from the table
             for key, value in request.form.items():
-                if key.startswith('wage_'):
-                    date_str = key.replace('wage_', '')
+                if key.startswith('adv_'):
+                    date_str = key.replace('adv_', '')
                     try:
                         att_date = datetime.strptime(date_str, '%Y-%m-%d').date()
                         att = Attendance.query.filter_by(labour_id=id, date=att_date).first()
-                        if att and att.status == 'Present' and att_date >= today:
-                            att.daily_wage = float(value)
+                        if att and att.status == 'Present':
+                            adv_val = float(value)
+                            att.advance = adv_val
+                            att.daily_wage = labour.daily_wage - adv_val
                     except: pass
             db.session.commit()
             flash('Weekly wages updated successfully!', 'success')
@@ -171,18 +244,19 @@ def edit(id):
     
     total_present = sum(1 for status in att_map.values() if status == 'Present')
 
-    # Weekly Logic (Sunday to Saturday) - based on TODAY
+    # Weekly Logic (Sunday to Friday, 6 days)
     idx = (today.weekday() + 1) % 7 # 0 is Sunday
-    sun_date = today - timedelta(days=idx)
+    start_date = today - timedelta(days=idx)
     
     weekly_data = []
     total_weekly_wage = 0.0
-    for i in range(7):
-        current_day = sun_date + timedelta(days=i)
+    for i in range(6):
+        current_day = start_date + timedelta(days=i)
         att = Attendance.query.filter_by(labour_id=id, date=current_day).first()
         status_val = att.status if att else None
         
         wage = (att.daily_wage or 0.0) if att else 0.0
+        advance = (att.advance or 0.0) if att else 0.0
         total_weekly_wage += wage
         
         weekly_data.append({
@@ -193,7 +267,9 @@ def edit(id):
             'present': '✓' if status_val == 'Present' else '',
             'absent': '✗' if status_val == 'Absent' else '',
             'status': status_val,
-            'wage': wage
+            'wage': wage,
+            'advance': advance,
+            'base_wage': labour.daily_wage
         })
     
     months = [

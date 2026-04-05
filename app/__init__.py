@@ -1,10 +1,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_apscheduler import APScheduler
 from config import Config
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+scheduler = APScheduler()
 login_manager.login_view = 'auth.login'
 
 def create_app(config_class=Config):
@@ -13,6 +15,17 @@ def create_app(config_class=Config):
 
     db.init_app(app)
     login_manager.init_app(app)
+
+    # Initialize APScheduler
+    scheduler.init_app(app)
+    
+    from app.tasks import check_attendance_and_send_email
+    
+    @scheduler.task('cron', id='attendance_reminder', minute='*')
+    def run_reminder():
+        check_attendance_and_send_email(app)
+        
+    scheduler.start()
 
     # Register Blueprints
     from app.auth import bp as auth_bp

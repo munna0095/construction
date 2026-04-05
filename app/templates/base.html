@@ -473,8 +473,12 @@
                 <i class="fas fa-th-large"></i> <span>Dashboard</span>
             </a>
             <a href="{{ url_for('labour.index') }}"
-                class="nav-item {% if request.endpoint.startswith('labour') %}active{% endif %}">
-                <i class="fas fa-users"></i> <span>Labour</span>
+                class="nav-item {% if request.endpoint == 'labour.index' or request.endpoint == 'labour.edit' or request.endpoint == 'labour.add' %}active{% endif %}">
+                <i class="fas fa-users"></i> <span>Labour Management</span>
+            </a>
+            <a href="{{ url_for('labour.bulk_attendance') }}"
+                class="nav-item {% if request.endpoint == 'labour.bulk_attendance' %}active{% endif %}">
+                <i class="fas fa-clipboard-check"></i> <span>Bulk Attendance</span>
             </a>
             <a href="{{ url_for('projects.index') }}"
                 class="nav-item {% if request.endpoint.startswith('projects') %}active{% endif %}">
