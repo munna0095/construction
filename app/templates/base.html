@@ -10,17 +10,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-bg: #f0fdf4;
-            /* Very light green / Pastel Cream */
+            --construction-orange: #FF6B35;
+            --construction-yellow: #FFC72C;
+            --construction-dark: #2D3436;
+            --construction-light: #F8F9FA;
+            --construction-red: #E63946;
+            --construction-green: #28A745;
+            --construction-blue: #004B87;
+            
+            --primary-bg: #F8F9FA;
             --secondary-bg: #ffffff;
-            --accent-color: #0ea5e9;
-            /* Sky Blue */
-            --text-main: #1e293b;
+            --accent-color: var(--construction-orange);
+            --text-main: var(--construction-dark);
             --text-muted: #64748b;
-            --glass: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(144, 238, 144, 0.3);
-            --mulyank-green: #90ee90;
-            --mulyank-blue: #87ceeb;
+            --glass: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 107, 53, 0.2);
+            --mulyank-green: var(--construction-orange);
+            --mulyank-blue: var(--construction-blue);
             --sidebar-width: 280px;
         }
 
@@ -77,7 +83,7 @@
             font-size: 1.25rem;
             font-weight: 800;
             letter-spacing: 1px;
-            background: linear-gradient(135deg, #22c55e, #0ea5e9);
+            background: linear-gradient(135deg, var(--construction-orange), var(--construction-dark));
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -110,16 +116,16 @@
         }
 
         .nav-item:hover {
-            background: rgba(144, 238, 144, 0.2);
-            color: #166534;
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--construction-orange);
             transform: translateX(5px);
         }
 
         .nav-item.active {
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(14, 165, 233, 0.15));
-            color: #166534;
-            border: 1px solid rgba(34, 197, 94, 0.2);
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(45, 52, 54, 0.15));
+            color: var(--construction-orange);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.1);
         }
 
         /* Main Content Area */
@@ -161,30 +167,30 @@
             border: 1px solid var(--glass-border);
             border-radius: 20px;
             padding: 2rem;
-            box-shadow: 0 15px 35px rgba(34, 197, 94, 0.08);
+            box-shadow: 0 15px 35px rgba(255, 107, 53, 0.08);
             transition: all 0.3s ease;
         }
 
         .glass-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 45px rgba(34, 197, 94, 0.12);
+            box-shadow: 0 20px 45px rgba(255, 107, 53, 0.12);
         }
 
         .btn-premium {
-            background: linear-gradient(135deg, #22c55e, #0ea5e9);
+            background: linear-gradient(135deg, var(--construction-orange), #E35C3A);
             border: none;
             color: white;
             padding: 0.75rem 1.75rem;
             border-radius: 12px;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
         }
 
         .btn-premium:hover {
             opacity: 0.95;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
             color: white;
         }
 
