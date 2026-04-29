@@ -1,0 +1,45 @@
+{
+  "name": "siddhi-construction-website",
+  "version": "1.0.0",
+  "description": "Professional 3D interactive construction company website",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000",
+    "build": "echo \"Static site - no build needed\"",
+    "deploy": "echo \"See README.md for deployment instructions\""
+  },
+  "keywords": [
+    "construction",
+    "website",
+    "react",
+    "threejs",
+    "3d",
+    "siddhi"
+  ],
+  "author": "SIDDHI CONSTRUCTION",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/siddhi-construction-website.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "technologies": {
+    "react": "18.2.0",
+    "three": "r128",
+    "tailwindcss": "latest",
+    "gsap": "3.12.2",
+    "javascript": "ES6+"
+  },
+  "features": [
+    "3D Interactive Gallery",
+    "Responsive Design",
+    "Modern UI/UX",
+    "Contact Form",
+    "Project Showcase",
+    "Team Management",
+    "SEO Optimized"
+  ]
+}
