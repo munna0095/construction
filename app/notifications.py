@@ -1,8 +1,7 @@
-"""Daily attendance report: builds the message and sends it by email and WhatsApp.
+"""Daily attendance report: builds the message and sends it by email and Telegram.
 
 Uses only the standard library for HTTP/SMTP, so no new dependencies are needed.
 """
-import base64
 import json
 import re
 import smtplib
@@ -12,37 +11,25 @@ from email.message import EmailMessage
 
 from flask import current_app
 
-from app import db
 from app.models import Attendance, Labour
 
-DEFAULT_COUNTRY_CODE = '91'  # India: 10-digit numbers get +91 added
 
-
-def normalize_whatsapp(number):
-    """Return an E.164 number like +919876543210, or None if it cannot be read."""
-    number = (number or '').strip()
-    if not number:
-        return None
-    if number.startswith('+'):
-        digits = '+' + re.sub(r'\D', '', number)
-        return digits if 8 <= len(digits) <= 16 else None
-    digits = re.sub(r'\D', '', number)
-    if len(digits) == 10:
-        return '+' + DEFAULT_COUNTRY_CODE + digits
-    if len(digits) == 12 and digits.startswith(DEFAULT_COUNTRY_CODE):
-        return '+' + digits
+def normalize_chat_id(value):
+    """Telegram chat IDs are integers (negative for groups). Return the cleaned ID or None."""
+    value = (value or '').strip()
+    if re.fullmatch(r'-?\d{5,20}', value):
+        return value
     return None
 
 
-def parse_whatsapp_numbers(raw):
-    """Split the stored comma-separated value into a list of E.164 numbers."""
-    return [n for n in (normalize_whatsapp(p) for p in (raw or '').split(',')) if n]
+def parse_chat_ids(raw):
+    """Split the stored comma-separated value into a list of chat IDs."""
+    return [c for c in (normalize_chat_id(p) for p in (raw or '').split(',')) if c]
 
 
 def build_report(today):
     """Collect today's attendance and format the message.
 
-    Returns a dict with: missing (bool), subject, body, and the name lists.
     'missing' means at least one labour has no attendance row for today.
     """
     labours = Labour.query.order_by(Labour.name).all()
@@ -118,29 +105,22 @@ def send_email(to_address, subject, body):
         server.send_message(msg)
 
 
-def send_whatsapp(to_e164, body):
-    cfg = current_app.config
-    sid = cfg['TWILIO_ACCOUNT_SID']
-    token = cfg['TWILIO_AUTH_TOKEN']
-    sender = cfg['TWILIO_WHATSAPP_FROM']
-    if not (sid and token and sender):
-        raise RuntimeError('TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM are not set')
+def send_telegram(chat_id, text):
+    token = current_app.config['TELEGRAM_BOT_TOKEN']
+    if not token:
+        raise RuntimeError('TELEGRAM_BOT_TOKEN is not set on the server')
 
-    url = f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json'
-    data = urllib.parse.urlencode({
-        'From': sender,
-        'To': f'whatsapp:{to_e164}',
-        'Body': body,
-    }).encode()
-    request = urllib.request.Request(url, data=data, method='POST')
-    credentials = base64.b64encode(f'{sid}:{token}'.encode()).decode()
-    request.add_header('Authorization', f'Basic {credentials}')
-    with urllib.request.urlopen(request, timeout=20) as response:
-        return json.loads(response.read())
+    url = f'https://api.telegram.org/bot{token}/sendMessage'
+    data = urllib.parse.urlencode({'chat_id': chat_id, 'text': text}).encode()
+    with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=20) as response:
+        result = json.loads(response.read())
+    if not result.get('ok'):
+        raise RuntimeError(result.get('description', 'Telegram rejected the message'))
+    return result
 
 
 def send_attendance_report(settings, today):
-    """Build today's report and send it to the admin email and all WhatsApp numbers.
+    """Build today's report and send it to the admin email and all Telegram chats.
 
     Returns a list of (channel, target, ok, error) tuples, one per attempted send.
     Each channel is attempted independently, so one failure does not block the rest.
@@ -156,12 +136,13 @@ def send_attendance_report(settings, today):
             current_app.logger.exception('Email report failed')
             results.append(('email', settings.admin_email, False, str(exc)))
 
-    for number in parse_whatsapp_numbers(settings.whatsapp_numbers):
+    text = report['subject'] + '\n\n' + report['body']
+    for chat_id in parse_chat_ids(settings.telegram_chat_ids):
         try:
-            send_whatsapp(number, report['body'])
-            results.append(('whatsapp', number, True, ''))
+            send_telegram(chat_id, text)
+            results.append(('telegram', chat_id, True, ''))
         except Exception as exc:
-            current_app.logger.exception('WhatsApp report failed for %s', number)
-            results.append(('whatsapp', number, False, str(exc)))
+            current_app.logger.exception('Telegram report failed for %s', chat_id)
+            results.append(('telegram', chat_id, False, str(exc)))
 
     return results

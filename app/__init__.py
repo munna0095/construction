@@ -16,8 +16,8 @@ def _ensure_schema(app):
     with app.app_context():
         db.create_all()
         columns = {c['name'] for c in inspect(db.engine).get_columns('settings')}
-        if 'whatsapp_numbers' not in columns:
-            db.session.execute(text('ALTER TABLE settings ADD COLUMN whatsapp_numbers VARCHAR(255)'))
+        if 'telegram_chat_ids' not in columns:
+            db.session.execute(text('ALTER TABLE settings ADD COLUMN telegram_chat_ids VARCHAR(255)'))
             db.session.commit()
 
 def create_app(config_class=Config):

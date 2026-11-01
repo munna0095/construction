@@ -113,7 +113,7 @@ class Settings(db.Model):
     admin_email = db.Column(db.String(120), nullable=True)
     reminder_time = db.Column(db.String(5), default='19:00') # "HH:MM" format
     email_sent_date = db.Column(db.Date, nullable=True) # Date the daily report was last sent (once per day)
-    whatsapp_numbers = db.Column(db.String(255), nullable=True) # Comma-separated, max 3 numbers
+    telegram_chat_ids = db.Column(db.String(255), nullable=True) # Comma-separated, max 3 chat IDs
 
 @login_manager.user_loader
 def load_user(id):

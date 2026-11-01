@@ -3,7 +3,7 @@ import re
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User, Settings
-from app.notifications import normalize_whatsapp
+from app.notifications import normalize_chat_id
 from app import db
 
 bp = Blueprint('auth', __name__)
@@ -71,20 +71,20 @@ def settings():
                 flash('Please enter a valid reminder time (HH:MM, 24-hour).', 'danger')
                 return redirect(url_for('auth.settings'))
 
-            raw_numbers = [request.form.get(f'whatsapp_{i}', '').strip() for i in (1, 2, 3)]
+            raw_ids = [request.form.get(f'telegram_{i}', '').strip() for i in (1, 2, 3)]
             cleaned = []
-            for raw in raw_numbers:
+            for raw in raw_ids:
                 if not raw:
                     continue
-                normalized = normalize_whatsapp(raw)
+                normalized = normalize_chat_id(raw)
                 if not normalized:
-                    flash(f'"{raw}" is not a valid WhatsApp number. Use 10 digits or +country code.', 'danger')
+                    flash(f'"{raw}" is not a valid Telegram chat ID. It should be a number like 123456789.', 'danger')
                     return redirect(url_for('auth.settings'))
                 cleaned.append(normalized)
 
             settings_obj.admin_email = (request.form.get('admin_email') or '').strip()
             settings_obj.reminder_time = reminder_time
-            settings_obj.whatsapp_numbers = ','.join(cleaned)
+            settings_obj.telegram_chat_ids = ','.join(cleaned)
             db.session.commit()
             flash('Daily report settings saved.', 'success')
 
@@ -96,7 +96,7 @@ def settings():
             today = datetime.now(ZoneInfo(current_app.config['APP_TIMEZONE'])).date()
             results = send_attendance_report(settings_obj, today)
             if not results:
-                flash('Nothing sent: add an admin email or WhatsApp numbers first.', 'warning')
+                flash('Nothing sent: add an admin email or Telegram chat IDs first.', 'warning')
             for channel, target, ok, error in results:
                 if ok:
                     flash(f'Report sent by {channel} to {target}.', 'success')
@@ -105,10 +105,10 @@ def settings():
 
         return redirect(url_for('auth.settings'))
 
-    whatsapp_numbers = (settings_obj.whatsapp_numbers or '').split(',') if settings_obj.whatsapp_numbers else []
-    whatsapp_numbers += [''] * (3 - len(whatsapp_numbers))
+    telegram_chat_ids = (settings_obj.telegram_chat_ids or '').split(',') if settings_obj.telegram_chat_ids else []
+    telegram_chat_ids += [''] * (3 - len(telegram_chat_ids))
     return render_template('auth/settings.html', title='Admin Settings', app_settings=settings_obj,
-                           whatsapp_numbers=whatsapp_numbers)
+                           telegram_chat_ids=telegram_chat_ids)
 
 def send_reset_email(user):
     import smtplib

@@ -39,4 +39,4 @@ def check_attendance_and_send_email(app):
             status = 'sent' if ok else f'FAILED: {error}'
             print(f'[daily report] {channel} to {target}: {status}')
         if not results:
-            print('[daily report] no email or WhatsApp recipients configured')
+            print('[daily report] no email or Telegram recipients configured')

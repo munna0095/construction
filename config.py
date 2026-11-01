@@ -17,7 +17,5 @@ class Config:
     SMTP_USER = os.environ.get('SMTP_USER') or ''
     SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD') or ''
 
-    # WhatsApp via Twilio. TWILIO_WHATSAPP_FROM looks like: whatsapp:+14155238886
-    TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID') or ''
-    TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN') or ''
-    TWILIO_WHATSAPP_FROM = os.environ.get('TWILIO_WHATSAPP_FROM') or ''
+    # Telegram bot token from @BotFather
+    TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN') or ''
