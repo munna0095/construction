@@ -45,21 +45,37 @@
 
     <div class="col-md-5 offset-md-1">
         <div class="glass-card" style="border-left: 4px solid var(--accent-color);">
-            <h5 class="fw-bold mb-3">Email Reminder Configuration</h5>
+            <h5 class="fw-bold mb-3">Daily Attendance Report</h5>
+            <p class="text-muted small">Sent once a day at the time below, by email and WhatsApp. If attendance is not logged yet, it asks for it; if logged, it lists who was present and absent.</p>
             <form method="POST">
                 <input type="hidden" name="action" value="email_reminder">
                 <div class="mb-4">
-                    <label for="admin_email" class="form-label small fw-bold text-muted">ADMIN NOTIFICATION EMAIL</label>
-                    <input type="email" class="form-control" id="admin_email" name="admin_email" 
-                        value="{{ app_settings.admin_email if app_settings else '' }}" placeholder="Enter email for daily attendance reminder">
+                    <label for="admin_email" class="form-label small fw-bold text-muted">ADMIN NOTIFICATION EMAIL (OPTIONAL)</label>
+                    <input type="email" class="form-control" id="admin_email" name="admin_email"
+                        value="{{ app_settings.admin_email if app_settings else '' }}" placeholder="Enter email for daily attendance report">
                 </div>
                 <div class="mb-4">
-                    <label for="reminder_time" class="form-label small fw-bold text-muted">DAILY REMINDER TIME (24H)</label>
+                    <label class="form-label small fw-bold text-muted">WHATSAPP NUMBERS (OPTIONAL, UP TO 3)</label>
+                    {% for number in whatsapp_numbers %}
+                    <input type="tel" class="form-control mb-2" name="whatsapp_{{ loop.index }}" value="{{ number }}"
+                        placeholder="{{ 'WhatsApp number ' ~ loop.index ~ ' (optional), e.g. 9876543210' }}">
+                    {% endfor %}
+                </div>
+                <div class="mb-4">
+                    <label for="reminder_time" class="form-label small fw-bold text-muted">DAILY REPORT TIME (24H)</label>
                     <input type="time" class="form-control" id="reminder_time" name="reminder_time"
-                        value="{{ app_settings.reminder_time if app_settings else '19:00' }}">
+                        value="{{ app_settings.reminder_time if app_settings else '19:00' }}" required>
                 </div>
                 <div class="d-flex justify-content-end mb-4">
                     <button type="submit" class="btn btn-primary px-4">Update Configuration</button>
+                </div>
+            </form>
+
+            <form method="POST" class="mb-4">
+                <input type="hidden" name="action" value="send_now">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Send today's report immediately to check the setup.</span>
+                    <button type="submit" class="btn btn-outline-success px-4">Send Report Now</button>
                 </div>
             </form>
 

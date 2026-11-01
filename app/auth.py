@@ -1,6 +1,9 @@
+import re
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User, Settings
+from app.notifications import normalize_whatsapp
 from app import db
 
 bp = Blueprint('auth', __name__)
@@ -63,14 +66,49 @@ def settings():
             flash('Admin credentials updated successfully', 'success')
             
         elif action == 'email_reminder':
-            settings_obj.admin_email = request.form.get('admin_email')
-            settings_obj.reminder_time = request.form.get('reminder_time')
+            reminder_time = (request.form.get('reminder_time') or '').strip()
+            if not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', reminder_time):
+                flash('Please enter a valid reminder time (HH:MM, 24-hour).', 'danger')
+                return redirect(url_for('auth.settings'))
+
+            raw_numbers = [request.form.get(f'whatsapp_{i}', '').strip() for i in (1, 2, 3)]
+            cleaned = []
+            for raw in raw_numbers:
+                if not raw:
+                    continue
+                normalized = normalize_whatsapp(raw)
+                if not normalized:
+                    flash(f'"{raw}" is not a valid WhatsApp number. Use 10 digits or +country code.', 'danger')
+                    return redirect(url_for('auth.settings'))
+                cleaned.append(normalized)
+
+            settings_obj.admin_email = (request.form.get('admin_email') or '').strip()
+            settings_obj.reminder_time = reminder_time
+            settings_obj.whatsapp_numbers = ','.join(cleaned)
             db.session.commit()
-            flash('Email reminder settings updated successfully', 'success')
-            
+            flash('Daily report settings saved.', 'success')
+
+        elif action == 'send_now':
+            from app.notifications import send_attendance_report
+            from zoneinfo import ZoneInfo
+            from datetime import datetime
+            from flask import current_app
+            today = datetime.now(ZoneInfo(current_app.config['APP_TIMEZONE'])).date()
+            results = send_attendance_report(settings_obj, today)
+            if not results:
+                flash('Nothing sent: add an admin email or WhatsApp numbers first.', 'warning')
+            for channel, target, ok, error in results:
+                if ok:
+                    flash(f'Report sent by {channel} to {target}.', 'success')
+                else:
+                    flash(f'{channel.title()} to {target} failed: {error}', 'danger')
+
         return redirect(url_for('auth.settings'))
 
-    return render_template('auth/settings.html', title='Admin Settings', app_settings=settings_obj)
+    whatsapp_numbers = (settings_obj.whatsapp_numbers or '').split(',') if settings_obj.whatsapp_numbers else []
+    whatsapp_numbers += [''] * (3 - len(whatsapp_numbers))
+    return render_template('auth/settings.html', title='Admin Settings', app_settings=settings_obj,
+                           whatsapp_numbers=whatsapp_numbers)
 
 def send_reset_email(user):
     import smtplib
