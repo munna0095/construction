@@ -2,7 +2,6 @@
 
 Uses only the standard library for HTTP/SMTP, so no new dependencies are needed.
 """
-import base64
 import json
 import re
 import smtplib
@@ -13,8 +12,6 @@ from email.message import EmailMessage
 from flask import current_app
 
 from app.models import Attendance, Labour
-
-DEFAULT_COUNTRY_CODE = '91'  # India: 10-digit numbers get +91 added
 
 
 def normalize_chat_id(value):
@@ -28,26 +25,6 @@ def normalize_chat_id(value):
 def parse_chat_ids(raw):
     """Split the stored comma-separated value into a list of chat IDs."""
     return [c for c in (normalize_chat_id(p) for p in (raw or '').split(',')) if c]
-
-
-def normalize_whatsapp(number):
-    """Return an E.164 number like +919876543210, or None if it cannot be read."""
-    number = (number or '').strip()
-    if not number:
-        return None
-    if number.startswith('+'):
-        digits = '+' + re.sub(r'\D', '', number)
-        return digits if 8 <= len(digits) <= 16 else None
-    digits = re.sub(r'\D', '', number)
-    if len(digits) == 10:
-        return '+' + DEFAULT_COUNTRY_CODE + digits
-    if len(digits) == 12 and digits.startswith(DEFAULT_COUNTRY_CODE):
-        return '+' + digits
-    return None
-
-
-def parse_whatsapp_numbers(raw):
-    return [n for n in (normalize_whatsapp(p) for p in (raw or '').split(',')) if n]
 
 
 def build_report(today):
@@ -142,32 +119,11 @@ def send_telegram(chat_id, text):
     return result
 
 
-def send_whatsapp(to_e164, body):
-    cfg = current_app.config
-    sid = cfg['TWILIO_ACCOUNT_SID']
-    token = cfg['TWILIO_AUTH_TOKEN']
-    sender = cfg['TWILIO_WHATSAPP_FROM']
-    if not (sid and token and sender):
-        raise RuntimeError('TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM are not set')
-
-    url = f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json'
-    data = urllib.parse.urlencode({
-        'From': sender,
-        'To': f'whatsapp:{to_e164}',
-        'Body': body,
-    }).encode()
-    request = urllib.request.Request(url, data=data, method='POST')
-    credentials = base64.b64encode(f'{sid}:{token}'.encode()).decode()
-    request.add_header('Authorization', f'Basic {credentials}')
-    with urllib.request.urlopen(request, timeout=20) as response:
-        return json.loads(response.read())
-
-
 def send_attendance_report(settings, today):
-    """Build today's report and send it to the admin email, Telegram chats and WhatsApp numbers.
+    """Build today's report and send it to the admin email and all Telegram chats.
 
     Returns a list of (channel, target, ok, error) tuples, one per attempted send.
-    Each send is attempted independently, so one failure does not block the rest.
+    Each channel is attempted independently, so one failure does not block the rest.
     """
     report = build_report(today)
     results = []
@@ -188,13 +144,5 @@ def send_attendance_report(settings, today):
         except Exception as exc:
             current_app.logger.exception('Telegram report failed for %s', chat_id)
             results.append(('telegram', chat_id, False, str(exc)))
-
-    for number in parse_whatsapp_numbers(settings.whatsapp_numbers):
-        try:
-            send_whatsapp(number, report['body'])
-            results.append(('whatsapp', number, True, ''))
-        except Exception as exc:
-            current_app.logger.exception('WhatsApp report failed for %s', number)
-            results.append(('whatsapp', number, False, str(exc)))
 
     return results
