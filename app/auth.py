@@ -3,7 +3,7 @@ import re
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User, Settings
-from app.notifications import normalize_chat_id
+from app.notifications import normalize_chat_id, normalize_whatsapp
 from app import db
 
 bp = Blueprint('auth', __name__)
@@ -72,7 +72,7 @@ def settings():
                 return redirect(url_for('auth.settings'))
 
             raw_ids = [request.form.get(f'telegram_{i}', '').strip() for i in (1, 2, 3)]
-            cleaned = []
+            cleaned_ids = []
             for raw in raw_ids:
                 if not raw:
                     continue
@@ -80,11 +80,23 @@ def settings():
                 if not normalized:
                     flash(f'"{raw}" is not a valid Telegram chat ID. It should be a number like 123456789.', 'danger')
                     return redirect(url_for('auth.settings'))
-                cleaned.append(normalized)
+                cleaned_ids.append(normalized)
+
+            raw_numbers = [request.form.get(f'whatsapp_{i}', '').strip() for i in (1, 2, 3)]
+            cleaned_numbers = []
+            for raw in raw_numbers:
+                if not raw:
+                    continue
+                normalized = normalize_whatsapp(raw)
+                if not normalized:
+                    flash(f'"{raw}" is not a valid WhatsApp number. Use 10 digits or +country code.', 'danger')
+                    return redirect(url_for('auth.settings'))
+                cleaned_numbers.append(normalized)
 
             settings_obj.admin_email = (request.form.get('admin_email') or '').strip()
             settings_obj.reminder_time = reminder_time
-            settings_obj.telegram_chat_ids = ','.join(cleaned)
+            settings_obj.telegram_chat_ids = ','.join(cleaned_ids)
+            settings_obj.whatsapp_numbers = ','.join(cleaned_numbers)
             db.session.commit()
             flash('Daily report settings saved.', 'success')
 
@@ -107,8 +119,10 @@ def settings():
 
     telegram_chat_ids = (settings_obj.telegram_chat_ids or '').split(',') if settings_obj.telegram_chat_ids else []
     telegram_chat_ids += [''] * (3 - len(telegram_chat_ids))
+    whatsapp_numbers = (settings_obj.whatsapp_numbers or '').split(',') if settings_obj.whatsapp_numbers else []
+    whatsapp_numbers += [''] * (3 - len(whatsapp_numbers))
     return render_template('auth/settings.html', title='Admin Settings', app_settings=settings_obj,
-                           telegram_chat_ids=telegram_chat_ids)
+                           telegram_chat_ids=telegram_chat_ids, whatsapp_numbers=whatsapp_numbers)
 
 def send_reset_email(user):
     import smtplib

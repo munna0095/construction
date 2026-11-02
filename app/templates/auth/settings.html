@@ -46,7 +46,7 @@
     <div class="col-md-5 offset-md-1">
         <div class="glass-card" style="border-left: 4px solid var(--accent-color);">
             <h5 class="fw-bold mb-3">Daily Attendance Report</h5>
-            <p class="text-muted small">Sent once a day at the time below, by email and Telegram. If attendance is not logged yet, it asks for it; if logged, it lists who was present and absent.</p>
+            <p class="text-muted small">Sent once a day at the time below, by email, Telegram and WhatsApp. If attendance is not logged yet, it asks for it; if logged, it lists who was present and absent.</p>
             <form method="POST">
                 <input type="hidden" name="action" value="email_reminder">
                 <div class="mb-4">
@@ -59,6 +59,13 @@
                     {% for chat_id in telegram_chat_ids %}
                     <input type="text" class="form-control mb-2" name="telegram_{{ loop.index }}" value="{{ chat_id }}"
                         placeholder="{{ 'Telegram chat ID ' ~ loop.index ~ ' (optional), e.g. 123456789' }}">
+                    {% endfor %}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted">WHATSAPP NUMBERS (OPTIONAL, UP TO 3)</label>
+                    {% for number in whatsapp_numbers %}
+                    <input type="tel" class="form-control mb-2" name="whatsapp_{{ loop.index }}" value="{{ number }}"
+                        placeholder="{{ 'WhatsApp number ' ~ loop.index ~ ' (optional), e.g. 9876543210' }}">
                     {% endfor %}
                 </div>
                 <div class="mb-4">
