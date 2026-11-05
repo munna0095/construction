@@ -96,9 +96,6 @@ def settings():
 
         elif action == 'send_now':
             from app.notifications import send_attendance_report
-            from zoneinfo import ZoneInfo
-            from datetime import datetime
-            from flask import current_app
             today = datetime.now(ZoneInfo(current_app.config['APP_TIMEZONE'])).date()
             results = send_attendance_report(settings_obj, today)
             if not results:
