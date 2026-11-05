@@ -1,6 +1,8 @@
 import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, current_app, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User, Settings
 from app.notifications import normalize_chat_id
@@ -84,6 +86,10 @@ def settings():
 
             settings_obj.admin_email = (request.form.get('admin_email') or '').strip()
             settings_obj.reminder_time = reminder_time
+            # If the new time is still ahead today, allow today's report to be sent at that time
+            now_local = datetime.now(ZoneInfo(current_app.config['APP_TIMEZONE']))
+            if reminder_time > now_local.strftime('%H:%M'):
+                settings_obj.email_sent_date = None
             settings_obj.telegram_chat_ids = ','.join(cleaned)
             db.session.commit()
             flash('Daily report settings saved.', 'success')
